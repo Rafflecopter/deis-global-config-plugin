@@ -23,7 +23,7 @@ fi
 RESP=$(curl -s -XGET -H "X-Vault-Token: $GLOBAL_CONFIG_VAULT_TOKEN" $GLOBAL_CONFIG_VAULT_URL)
 
 echo "$RESP" \
-    | jq15 -r '.data | to_entries | .[] | "\(.key)='\''\(.value)'\''"' \
+    | jq15 -r '.data | to_entries | .[] | "\(.key)=\(.value)"' \
     > /tmp/env \
     || (echo 'Could not retrieve global config' && echo "$RESP" && exit)
 
