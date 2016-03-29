@@ -41,6 +41,10 @@ while :; do
             GITHUB_TOKEN=$2
             shift 2
             ;;
+        -v|--vault-addr)
+            VAULT_ADDR=$2
+            shift 2
+            ;;
         --)
             shift 2
             break
@@ -104,7 +108,7 @@ echo 'Writing config to Vault server.'
 cat $TMP_FILE \
     | $DIR/bin/vault write -address=$VAULT_ADDR $VAULT_PATH/$CONFIG_ENV -
 
-DEIS_APPS=$(cat $TMP_FILE | jq -r '._staging_apps')
+DEIS_APPS=$(cat $TMP_FILE | jq -r '._apps')
 echo
 echo $DEIS_APPS | tr ' ' "\n" | column -c 50
 echo 'Restart these apps, so they can pick up the new config? (y/n)'
