@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+
 
 
 if [ -z "$GLOBAL_CONFIG_VAULT_TOKEN" ] || [ -z "$GLOBAL_CONFIG_VAULT_URL" ]; then
@@ -20,7 +20,11 @@ if [ ! -x "$(which jq15)" ]; then
         || (echo 'Bad checksum while trying to install global-sorcerer dependency. Can not source global config.' && return)
 fi
 
-RESP=$(curl -s -XGET -H "X-Vault-Token: $GLOBAL_CONFIG_VAULT_TOKEN" $GLOBAL_CONFIG_VAULT_URL)
+RESP=$(curl -s -XGET \
+            --retry 20 \
+            --retry-delay 5 \
+            -H "X-Vault-Token: $GLOBAL_CONFIG_VAULT_TOKEN" \
+            $GLOBAL_CONFIG_VAULT_URL)
 
 echo "$RESP" \
     | jq15 -r '.data | to_entries | .[] | "\(.key)=\(.value)"' \
