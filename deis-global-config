@@ -10,8 +10,10 @@ Edit configs that will be picked up by all apps using the receiver.
 usage: deis global-config [options]
 
 Options:
-    -e --env <staging,production>
-        which config you'd like to edit
+    -n --namespace <internal,user_facing>
+        which config you'd like to edit. You can have as many namespaces as 
+        you'd like, and one or more apps can source the config values from a
+        given namespace.
     -g --github <token>
         github personal access token with "read:org" scope
         see https://github.com/settings/tokens
@@ -36,6 +38,10 @@ while :; do
             exit
             ;;
         -e|--env)
+            CONFIG_ENV=$2
+            shift 2
+            ;;
+        -n|--namespace)
             CONFIG_ENV=$2
             shift 2
             ;;
