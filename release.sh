@@ -28,3 +28,6 @@ cd -
 
 git add "./releases/$1"
 git commit -m "release $1"
+
+echo
+echo 'Push to gh-pages on github if you are happy with this release.'
