@@ -16,7 +16,12 @@ We assume that you have Vault running somewhere with github authentication enabl
 
 ### Installation
 
-TODO: one-line install that installs deis cli and global-config plugin.
+```shell
+cd /usr/local/bin \
+  && curl -sSL -O http://rafflecopter.github.io/deis-global-config-plugin/releases/v0.1.1/deis-global-config \
+  && chmod +x deis-global-config \
+  && cd -
+```
 
 To use `deis global-config`, put the deis-global-config script on your path somewhere. Each deis app will need to source global-sorcerer as part of it's Dockerfile CMD. See https://github.com/Rafflecopter/deis-global-config-plugin/blob/master/test/Dockerfile.
 
