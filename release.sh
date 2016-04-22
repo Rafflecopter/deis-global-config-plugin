@@ -8,6 +8,7 @@ rm -rf /tmp/deis-global-config-release
 mkdir /tmp/deis-global-config-release
 cp ./deis-global-config ./global-sorcerer /tmp/deis-global-config-release/
 
+git tag $1
 git fetch origin gh-pages
 git checkout gh-pages
 mkdir "./releases/$1"
