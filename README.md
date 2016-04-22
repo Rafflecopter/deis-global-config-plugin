@@ -22,3 +22,7 @@ To use `deis global-config`, put the deis-global-config script on your path some
 
 ### Usage
 `deis global-config -h`
+
+### Contributing
+
+When you're ready to release a new version, `./release.sh vX.Y.Z` will create a new release in the gh-pages branch, but it'll be up to you to push it to github.
