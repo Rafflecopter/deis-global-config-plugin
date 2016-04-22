@@ -69,19 +69,24 @@ if [ ! -d "$DIR" ]; then
     echo 'Installing some dependencies'
 
     mkdir -p $DIR/bin
+fi
 
-    if [ "$(uname)" == "Darwin" ]; then
-        JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64
-        VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_darwin_amd64.zip
-    elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-        VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip
-    fi
+if [ "$(uname)" == "Darwin" ]; then
+    JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64
+    VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_darwin_amd64.zip
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip
+fi
     
+if [ `"$DIR/bin/jq" --version` != 'jq-1.5' ]; then
     wget $JQ_URL -O $DIR/bin/jq
+    chmod +x $DIR/bin/jq
+fi
+
+if [ `"$DIR/bin/vault" --version` != 'Vault v0.5.2' ]; then
     wget $VAULT_URL -O /tmp/vault0.5.2.zip
     unzip /tmp/vault0.5.2 -d $DIR/bin
-    chmod +x $DIR/bin/jq
     rm /tmp/vault0.5.2.zip
 fi
 
