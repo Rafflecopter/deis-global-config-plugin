@@ -108,8 +108,16 @@ echo 'You can open config in a different editor by setting EDITOR.'
 $DIR/bin/vault read -address=$VAULT_ADDR -format=json $VAULT_PATH/$CONFIG_ENV \
     | jq '.data' \
     > $TMP_FILE
+cp $TMP_FILE "${TMP_FILE}_editing"
 
 ${EDITOR:-vi} $TMP_FILE
+
+if [ "$(diff $TMP_FILE "${TMP_FILE}_editing")" == '' ]; then
+    echo
+    echo 'No change. Cleaning up and exiting...'
+    rm $TMP_FILE "${TMP_FILE}_editing"
+    exit 0
+fi
 
 echo
 echo 'Writing config to Vault server.'
@@ -139,4 +147,4 @@ if [ "$SYNC_YN" == 'y' ]; then
     rm -rf /tmp/sync-results
 fi
 
-rm $TMP_FILE
+rm $TMP_FILE "${TMP_FILE}_editing"
