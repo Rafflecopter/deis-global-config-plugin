@@ -1,0 +1,38 @@
+
+
+
+if [ -z "$GLOBAL_CONFIG_VAULT_TOKEN" ] || [ -z "$GLOBAL_CONFIG_VAULT_URL" ]; then
+    echo 'Not pulling global config because GLOBAL_CONFIG_VAULT_TOKEN and GLOBAL_CONFIG_VAULT_URL are not set.'
+    return
+fi
+
+if [ ! -x "$(which curl)" ]; then
+    echo 'Can not source global config unless curl is installed'
+    return
+fi
+
+if [ ! -x "$(which jq15)" ]; then
+    cd /usr/bin \
+        && curl -s -L -o jq15 https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 \
+        && [ "$(sha256sum /usr/bin/jq15)" = 'c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d  /usr/bin/jq15' ] \
+        && chmod +x 'jq15' \
+        && cd - \
+        || (echo 'Bad checksum while trying to install global-sorcerer dependency. Can not source global config.' && return)
+fi
+
+RESP=$(curl -s -XGET \
+            --retry 20 \
+            --retry-delay 5 \
+            -H "X-Vault-Token: $GLOBAL_CONFIG_VAULT_TOKEN" \
+            $GLOBAL_CONFIG_VAULT_URL)
+
+echo "$RESP" \
+    | jq15 -r '.data | to_entries | .[] | "\(.key)=\(.value)"' \
+    > /tmp/env \
+    || (echo 'Could not retrieve global config' && echo "$RESP" && exit)
+
+while read line; do
+    export "$line"
+done < /tmp/env
+
+rm /tmp/env
