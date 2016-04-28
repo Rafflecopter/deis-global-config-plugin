@@ -18,7 +18,7 @@ We assume that you have Vault running somewhere with github authentication enabl
 
 ```shell
 cd /usr/local/bin \
-  && curl -sSL -O http://rafflecopter.github.io/deis-global-config-plugin/releases/v0.1.2/deis-global-config \
+  && curl -sSL -O http://rafflecopter.github.io/deis-global-config-plugin/releases/v0.1.3/deis-global-config \
   && chmod +x deis-global-config \
   && cd -
 ```
