@@ -23,7 +23,7 @@ Options:
 EOF
 }
 
-DIR=~/.deis-global-config-plugin
+DIR=$HOME/.deis-global-config-plugin
 VAULT_HOST=$(deis apps:info -a vault | grep 'url:' | sed 's/url:.*vault/vault/')
 VAULT_ADDR=${VAULT_ADDR:-"https://$VAULT_HOST"}
 VAULT_PATH=secret/global-config
@@ -79,12 +79,12 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip
 fi
     
-if [ `"$DIR/bin/jq" --version` != 'jq-1.5' ]; then
+if [ "`$DIR/bin/jq --version`" != 'jq-1.5' ]; then
     wget $JQ_URL -O $DIR/bin/jq
     chmod +x $DIR/bin/jq
 fi
 
-if [ `"$DIR/bin/vault" --version` != 'Vault v0.5.2' ]; then
+if [ "`$DIR/bin/vault --version`" != 'Vault v0.5.2' ]; then
     wget $VAULT_URL -O /tmp/vault0.5.2.zip
     unzip /tmp/vault0.5.2 -d $DIR/bin
     rm /tmp/vault0.5.2.zip
