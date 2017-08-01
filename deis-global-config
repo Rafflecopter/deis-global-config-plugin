@@ -27,6 +27,7 @@ DIR=$HOME/.deis-global-config-plugin
 VAULT_HOST=$(deis apps:info -a vault | grep 'url:' | sed 's/url:.*vault/vault/')
 VAULT_ADDR=${VAULT_ADDR:-"https://$VAULT_HOST"}
 VAULT_PATH=secret/global-config
+VAULT_VERSION=0.7.0
 TMP_FILE=/tmp/conf$(date +%s)
 CONFIG_ENV=
 GITHUB_TOKEN=
@@ -73,10 +74,10 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
     JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64
-    VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_darwin_amd64.zip
+    VAULT_URL=https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_darwin_amd64.zip
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-    VAULT_URL=https://releases.hashicorp.com/vault/0.5.2/vault_0.5.2_linux_amd64.zip
+    VAULT_URL=https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
 fi
     
 if [ "`$DIR/bin/jq --version`" != 'jq-1.5' ]; then
@@ -84,10 +85,10 @@ if [ "`$DIR/bin/jq --version`" != 'jq-1.5' ]; then
     chmod +x $DIR/bin/jq
 fi
 
-if [ "`$DIR/bin/vault --version`" != 'Vault v0.5.2' ]; then
-    wget $VAULT_URL -O /tmp/vault0.5.2.zip
-    unzip /tmp/vault0.5.2 -d $DIR/bin
-    rm /tmp/vault0.5.2.zip
+if [ "`$DIR/bin/vault --version`" != "Vault v${VAULT_VERSION}" ]; then
+    wget $VAULT_URL -O /tmp/vault${VAULT_VERSION}.zip
+    unzip /tmp/vault${VAULT_VERSION} -d $DIR/bin
+    rm /tmp/vault${VAULT_VERSION}.zip
 fi
 
 echo
