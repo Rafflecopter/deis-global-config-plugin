@@ -85,7 +85,7 @@ if [ "`$DIR/bin/jq --version`" != 'jq-1.5' ]; then
     chmod +x $DIR/bin/jq
 fi
 
-if [ "`$DIR/bin/vault --version`" != "Vault v${VAULT_VERSION}" ]; then
+if [ -z "$($DIR/bin/vault --version | grep "Vault v${VAULT_VERSION}")" ]; then
     wget $VAULT_URL -O /tmp/vault${VAULT_VERSION}.zip
     unzip /tmp/vault${VAULT_VERSION} -d $DIR/bin
     rm /tmp/vault${VAULT_VERSION}.zip
