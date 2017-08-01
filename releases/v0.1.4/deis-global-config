@@ -1,0 +1,156 @@
+#! /usr/bin/env bash
+
+# Put this script on the path somewhere.
+# Deis will find it when you type `deis global-config`
+
+function show_help {
+cat << EOF
+Edit configs that will be picked up by all apps using the receiver.
+
+usage: deis global-config [options]
+
+Options:
+    -n --namespace <internal,user_facing>
+        which config you'd like to edit. You can have as many namespaces as 
+        you'd like, and one or more apps can source the config values from a
+        given namespace.
+    -g --github <token>
+        github personal access token with "read:org" scope
+        see https://github.com/settings/tokens
+    -v --vault-addr <https://some-vault.com>
+        address associated with the vault store where your global-config is stored
+
+EOF
+}
+
+DIR=$HOME/.deis-global-config-plugin
+VAULT_HOST=$(deis apps:info -a vault | grep 'url:' | sed 's/url:.*vault/vault/')
+VAULT_ADDR=${VAULT_ADDR:-"https://$VAULT_HOST"}
+VAULT_PATH=secret/global-config
+VAULT_VERSION=0.7.0
+TMP_FILE=/tmp/conf$(date +%s)
+CONFIG_ENV=
+GITHUB_TOKEN=
+
+while :; do
+    case $1 in
+        -h|--help)
+            show_help >&2
+            exit
+            ;;
+        -e|--env)
+            CONFIG_ENV=$2
+            shift 2
+            ;;
+        -n|--namespace)
+            CONFIG_ENV=$2
+            shift 2
+            ;;
+        -g|--github)
+            GITHUB_TOKEN=$2
+            shift 2
+            ;;
+        -v|--vault-addr)
+            VAULT_ADDR=$2
+            shift 2
+            ;;
+        --)
+            shift 2
+            break
+            ;;
+        global-config)
+            shift
+            ;;
+        *)
+            break
+    esac
+done
+
+if [ ! -d "$DIR" ]; then
+    echo 'Installing some dependencies'
+
+    mkdir -p $DIR/bin
+fi
+
+if [ "$(uname)" == "Darwin" ]; then
+    JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64
+    VAULT_URL=https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_darwin_amd64.zip
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    JQ_URL=https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    VAULT_URL=https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
+fi
+    
+if [ "`$DIR/bin/jq --version`" != 'jq-1.5' ]; then
+    wget $JQ_URL -O $DIR/bin/jq
+    chmod +x $DIR/bin/jq
+fi
+
+if [ "`$DIR/bin/vault --version`" != "Vault v${VAULT_VERSION}" ]; then
+    wget $VAULT_URL -O /tmp/vault${VAULT_VERSION}.zip
+    unzip /tmp/vault${VAULT_VERSION} -d $DIR/bin
+    rm /tmp/vault${VAULT_VERSION}.zip
+fi
+
+echo
+echo 'Authenticating with Vault.'
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo
+    echo 'If you dont have a github token, create a new one at https://www.github.com/settings/tokens with scope "read:org".'
+    echo
+    echo 'Paste your github token below:'
+    read GITHUB_TOKEN
+fi
+$DIR/bin/vault auth -address=$VAULT_ADDR -method=github token=$GITHUB_TOKEN
+
+if [ -z "$CONFIG_ENV" ]; then
+    echo
+    echo 'Which environment would you like to edit? (staging, production)'
+    read CONFIG_ENV
+fi
+
+echo
+echo "Opening $CONFIG_ENV config in ${EDITOR:-vi}." 
+echo 'You can open config in a different editor by setting EDITOR.'
+$DIR/bin/vault read -address=$VAULT_ADDR -format=json $VAULT_PATH/$CONFIG_ENV \
+    | jq '.data' \
+    > $TMP_FILE
+cp $TMP_FILE "${TMP_FILE}_editing"
+
+${EDITOR:-vi} $TMP_FILE
+
+if [ "$(diff $TMP_FILE "${TMP_FILE}_editing")" == '' ]; then
+    echo
+    echo 'No change. Cleaning up and exiting...'
+    rm $TMP_FILE "${TMP_FILE}_editing"
+    exit 0
+fi
+
+echo
+echo 'Writing config to Vault server.'
+cat $TMP_FILE \
+    | $DIR/bin/vault write -address=$VAULT_ADDR $VAULT_PATH/$CONFIG_ENV -
+
+DEIS_APPS=$(cat $TMP_FILE | jq -r '._apps')
+echo
+echo $DEIS_APPS | tr ' ' "\n" | column -c 50
+echo 'Restart these apps, so they can pick up the new config? (y/n)'
+read SYNC_YN
+
+if [ "$SYNC_YN" == 'y' ]; then
+    echo 'Restarting...this will take approximately 30 seconds.'
+    mkdir /tmp/sync-results
+
+    for app in $DEIS_APPS; do
+        deis ps:restart -a $app > /tmp/sync-results/$app &
+    done
+
+    wait
+
+    for app in $DEIS_APPS; do
+        cat /tmp/sync-results/$app
+    done
+
+    rm -rf /tmp/sync-results
+fi
+
+rm $TMP_FILE "${TMP_FILE}_editing"
